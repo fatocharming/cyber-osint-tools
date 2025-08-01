@@ -1,55 +1,59 @@
 import requests
-from bs4 import BeautifulSoup
-import argparse
 
-def fetch_page(url):
+def fetch_http_headers(url):
     """
-    Fetch the content of a webpage given its URL.
-    Returns the HTML content of the page.
+    Fetches the HTTP headers from a given URL.
+
+    Args:
+        url (str): The URL from which to fetch the headers.
+
+    Returns:
+        dict: A dictionary containing the HTTP headers.
     """
     try:
+        # Send a GET request to the specified URL
         response = requests.get(url)
-        response.raise_for_status()  # Raise an error for bad responses
-        return response.text
-    except requests.RequestException as e:
-        print(f"Error fetching {url}: {e}")
+        
+        # Return the headers as a dictionary
+        return response.headers
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching headers: {e}")
         return None
 
-def extract_metadata(html_content):
+def analyze_headers(headers):
     """
-    Extract metadata from the HTML content of a webpage.
-    Returns a dictionary with title and meta description.
+    Analyzes HTTP headers and provides insights.
+
+    Args:
+        headers (dict): The HTTP headers to analyze.
+
+    Returns:
+        None
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    title = soup.title.string if soup.title else 'No title found'
-    description = soup.find('meta', attrs={'name': 'description'})
-    description_content = description['content'] if description else 'No description found'
+    if headers:
+        print("HTTP Headers Analysis:")
+        # Check for common security headers
+        security_headers = ['Strict-Transport-Security', 'Content-Security-Policy', 'X-Content-Type-Options', 'X-Frame-Options', 'X-XSS-Protection']
+        
+        for header in security_headers:
+            if header in headers:
+                print(f"{header}: Present")
+            else:
+                print(f"{header}: Not Present")
+        
+        # Print the server information
+        server_info = headers.get('Server', 'No server information found')
+        print(f"Server Information: {server_info}")
+    else:
+        print("No headers to analyze.")
+
+def main():
+    # Example URL for analysis
+    url = input("Enter the URL to analyze (e.g., https://example.com): ")
     
-    return {
-        'title': title,
-        'description': description_content
-    }
-
-def display_metadata(metadata):
-    """
-    Display the extracted metadata in a readable format.
-    """
-    print("Page Title: ", metadata['title'])
-    print("Meta Description: ", metadata['description'])
-
-def main(url):
-    """
-    Main function to orchestrate the fetching and extraction of metadata.
-    """
-    html_content = fetch_page(url)
-    if html_content:
-        metadata = extract_metadata(html_content)
-        display_metadata(metadata)
+    # Fetch and analyze the HTTP headers
+    headers = fetch_http_headers(url)
+    analyze_headers(headers)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Fetch and extract metadata from a webpage.')
-    parser.add_argument('url', type=str, help='The URL of the webpage to analyze')
-    args = parser.parse_args()
-    
-    main(args.url)
-```
+    main()
